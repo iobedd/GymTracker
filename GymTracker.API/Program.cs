@@ -1,15 +1,15 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using AspNetCoreRateLimit;
+using FluentValidation.AspNetCore;
 using GymTracker.API.Middleware;
 using GymTracker.Application.Interfaces;
 using GymTracker.Infrastructure.Data;
 using GymTracker.Infrastructure.Services;
-using Serilog;
 using Microsoft.AspNetCore.Authentication;
-using AspNetCoreRateLimit;
-using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +51,12 @@ builder.Services.AddAuthentication(options =>
     options.Authority = keycloakAuthority;
     options.Audience = keycloakAudience;
     options.RequireHttpsMetadata = builder.Configuration.GetValue<bool>("Keycloak:RequireHttpsMetadata");
+
+    // Fara asta, ASP.NET Core remapeaza automat claim-uri standard JWT (sub, email, given_name...)
+    // la URI-uri legacy WS-Federation (ex: "sub" -> ".../nameidentifier"), iar codul nostru care
+    // citeste explicit "sub" din token nu le-ar mai gasi. Pastram numele exacte din tokenul Keycloak.
+    options.MapInboundClaims = false;
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
